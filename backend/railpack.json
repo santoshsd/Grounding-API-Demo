@@ -1,5 +1,0 @@
-{
-  "install": {
-    "cmds": ["pip install -e ."]
-  }
-}
