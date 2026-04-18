@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Iterator
 
 from sqlmodel import Field, Session, SQLModel, create_engine, Relationship
@@ -53,13 +54,18 @@ class JudgeRow(SQLModel, table=True):
     call: ProviderCall | None = Relationship(back_populates="judge")
 
 
-_engine = create_engine(
-    get_settings().database_url,
-    echo=False,
-    connect_args={"check_same_thread": False}
-    if get_settings().database_url.startswith("sqlite")
-    else {},
-)
+def _make_engine():
+    url = get_settings().database_url
+    if url.startswith("sqlite:///"):
+        db_path = Path(url.replace("sqlite:///", "", 1))
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+    return create_engine(
+        url,
+        echo=False,
+        connect_args={"check_same_thread": False} if url.startswith("sqlite") else {},
+    )
+
+_engine = _make_engine()
 
 
 def init_db() -> None:
