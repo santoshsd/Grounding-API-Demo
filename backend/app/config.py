@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # Model used to synthesize answers for retrieval-only providers (Brave/Tavily/Exa).
     retrieval_synthesis_model: str = "gemini-3-pro-preview"
 
-    database_url: str = "sqlite:///./grounding.db"
+    database_url: str = "sqlite:////data/grounding.db"
     cors_origins: str = "http://localhost:3000"
     request_timeout_s: int = 30
 
