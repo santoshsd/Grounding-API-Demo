@@ -4,13 +4,19 @@ A side-by-side comparison tool for grounding-capable LLM APIs. Ask one question,
 
 ## Providers
 
-| Provider | Grounded call | Baseline |
-|---|---|---|
-| Bing + GPT-4o | Bing Web Search v7 retrieval → GPT-4o synthesis | GPT-4o only |
-| Gemini | `gemini-2.5-pro` with `google_search` tool | same model, no tools |
-| Claude | `claude-sonnet-4-6` with `web_search_20250305` | same model, no tools |
-| OpenAI | `gpt-4o` via Responses API `web_search` tool | same model, no tools |
-| Perplexity | `sonar-pro` | `sonar` |
+| Provider | Grounded call | Baseline | Shown in UI |
+|---|---|---|---|
+| Gemini | `gemini-3-pro-preview` with `google_search` tool | same model, no tools | ✓ (unchecked by default) |
+| Claude | `claude-sonnet-4-6` with `web_search_20250305` | same model, no tools | ✓ (checked by default) |
+| OpenAI | `gpt-4o` via Responses API `web_search` tool | same model, no tools | ✓ (checked by default) |
+| Tavily | Tavily Search API → Gemini synthesis | Gemini, no retrieval | ✓ (unchecked by default) |
+| Exa | Exa Search API → Gemini synthesis | Gemini, no retrieval | ✓ (checked by default) |
+| Perplexity | `sonar-pro` | `sonar` | hidden |
+| Brave | Brave Search API → Gemini synthesis | Gemini, no retrieval | hidden |
+
+### Hidden providers
+
+Perplexity and Brave are fully implemented on the backend and still returned by `/api/providers`, but they are filtered out of the frontend UI. To re-enable them, edit `HIDDEN_PROVIDERS` in `frontend/components/QueryForm.tsx`. To change which providers are pre-checked when the page loads, edit `DEFAULT_SELECTED` in the same file.
 
 ## Quick start
 
@@ -52,8 +58,8 @@ npm run dev                      # http://localhost:3000
 ## Architecture
 
 ```
-Next.js dashboard  ─▶  FastAPI backend  ─▶  5 provider adapters (async fan-out)
-                                        └▶  Claude judge (async fan-out)
+Next.js dashboard  ─▶  FastAPI backend  ─▶  7 provider adapters (async fan-out)
+                                        └▶  LLM judge — Gemini or Claude (async fan-out)
                                         └▶  SQLite (runs, calls, scores)
 ```
 

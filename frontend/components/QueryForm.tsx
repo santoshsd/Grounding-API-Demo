@@ -21,7 +21,22 @@ const EXAMPLES = [
   "What happened at the last Fed meeting?",
   "Current stock price of NVIDIA and key news this week.",
   "What are the top AI research papers published this month?",
+  "Who won Best Picture at the 2026 Academy Awards?",
+  "Latest NBA playoff standings and top scorers this week.",
+  "Who won the 2026 Super Bowl and by what score?",
+  "Latest GPT-5 release details and benchmark results.",
+  "Most recent Apple product announcements in 2026.",
+  "What are the most significant geopolitical events this month?",
+  "Current status of the US-China tariff negotiations.",
+  "Top-grossing movies at the box office this weekend.",
 ];
+
+// Providers configured on the backend but hidden from the UI for now.
+// Re-enable by removing from this set. See README "Hidden providers" note.
+const HIDDEN_PROVIDERS = new Set(["perplexity", "brave"]);
+
+// Providers checked by default when the UI loads.
+const DEFAULT_SELECTED = new Set(["claude", "openai_ws", "exa"]);
 
 export function QueryForm({
   onSubmit,
@@ -41,8 +56,9 @@ export function QueryForm({
   useEffect(() => {
     listProviders()
       .then((p) => {
-        setProviders(p);
-        setSelected(new Set(p));
+        const visible = p.filter((x) => !HIDDEN_PROVIDERS.has(x));
+        setProviders(visible);
+        setSelected(new Set(visible.filter((x) => DEFAULT_SELECTED.has(x))));
       })
       .catch(() => setProviders([]));
     getJudgeConfig()
