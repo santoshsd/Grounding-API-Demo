@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { AboutGrounding } from "@/components/AboutGrounding";
 import { JudgeLegend } from "@/components/JudgeLegend";
 import { QueryForm, QueryFormValue } from "@/components/QueryForm";
 import { ResultsGrid } from "@/components/ResultsGrid";
@@ -42,6 +43,7 @@ export default function HomePage() {
   return (
     <div className="grid grid-cols-[1fr_240px] gap-6">
       <div className="flex flex-col gap-6">
+        <AboutGrounding />
         <QueryForm onSubmit={onSubmit} loading={loading} />
         {error && <p className="text-[var(--bad)] text-sm">{error}</p>}
         {run && (
