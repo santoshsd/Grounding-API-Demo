@@ -5,11 +5,14 @@ import { useEffect, useState } from "react";
 const STORAGE_KEY = "grounding-howto-collapsed";
 
 export function HowItWorks() {
-  const [collapsed, setCollapsed] = useState(false);
+  // Default collapsed so first-time visitors get a compact page;
+  // they can click "Show" to expand it, and their choice is remembered.
+  const [collapsed, setCollapsed] = useState(true);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setCollapsed(localStorage.getItem(STORAGE_KEY) === "1");
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === "0") setCollapsed(false);
     }
   }, []);
 
