@@ -4,24 +4,17 @@ Each completed POST /api/query emits one stdout line. In Railway Observability, 
 the substring ``query_complete`` or JSON field ``message`` / ``run_id``.
 
 Environment: ``LOG_QUERY_PREVIEW_CHARS`` — if > 0, adds truncated ``query_preview`` (default 0 omits query text).
+
+Writes use :func:`sys.stdout.write` at emit time (not a logging handler bound at import)
+so output is captured correctly by pytest ``capsys`` and always targets the current stdout.
 """
 
 import json
-import logging
 import sys
 from typing import Any
 
 from .config import get_settings
 from .schemas import ProviderResult
-
-# Message-only formatter so each line is valid JSON (no `INFO:logger:` prefix).
-_logger = logging.getLogger("app.query_complete")
-if not _logger.handlers:
-    _handler = logging.StreamHandler(sys.stdout)
-    _handler.setFormatter(logging.Formatter("%(message)s"))
-    _logger.addHandler(_handler)
-    _logger.propagate = False
-    _logger.setLevel(logging.INFO)
 
 
 def log_query_complete(
@@ -65,4 +58,5 @@ def log_query_complete(
         )
 
     line = json.dumps(payload, default=str)
-    _logger.info("%s", line)
+    sys.stdout.write(line + "\n")
+    sys.stdout.flush()

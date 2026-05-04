@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
+from sqlalchemy import inspect, text
 from sqlmodel import Field, Session, SQLModel, create_engine, Relationship
 
 from .config import get_settings
@@ -70,36 +71,43 @@ def _make_engine():
 _engine = _make_engine()
 
 
-def _sqlite_file_path() -> Path | None:
-    url = get_settings().database_url
-    if not url.startswith("sqlite:///"):
-        return None
-    return Path(url.replace("sqlite:///", "", 1))
+def _migrate_run_timing_columns() -> None:
+    """Add fan_out_ms / judge_ms on existing DBs (create_all does not ALTER tables).
 
-
-def _migrate_sqlite_timing_columns() -> None:
-    """Add timing columns on existing SQLite DBs (create_all does not ALTER)."""
-    path = _sqlite_file_path()
-    if path is None:
-        return
-    import sqlite3
-
-    conn = sqlite3.connect(str(path))
+    Works for SQLite, PostgreSQL, MySQL, and other engines SQLAlchemy inspect supports.
+    """
     try:
-        cur = conn.execute("PRAGMA table_info(run)")
-        cols = {row[1] for row in cur.fetchall()}
-        if "fan_out_ms" not in cols:
-            conn.execute("ALTER TABLE run ADD COLUMN fan_out_ms INTEGER")
-        if "judge_ms" not in cols:
-            conn.execute("ALTER TABLE run ADD COLUMN judge_ms INTEGER")
-        conn.commit()
-    finally:
-        conn.close()
+        insp = inspect(_engine)
+        cols = {c["name"] for c in insp.get_columns(Run.__tablename__)}
+    except Exception:
+        return
+
+    dialect = _engine.dialect.name
+    table = Run.__tablename__
+
+    def add_integer_column(name: str) -> None:
+        if dialect == "postgresql":
+            stmt = text(
+                f'ALTER TABLE "{table}" ADD COLUMN IF NOT EXISTS {name} INTEGER'
+            )
+        elif dialect in ("mysql", "mariadb"):
+            stmt = text(f"ALTER TABLE `{table}` ADD COLUMN {name} INTEGER")
+        else:
+            stmt = text(f"ALTER TABLE {table} ADD COLUMN {name} INTEGER")
+
+        with _engine.begin() as conn:
+            conn.execute(stmt)
+
+    if "fan_out_ms" not in cols:
+        add_integer_column("fan_out_ms")
+        cols.add("fan_out_ms")
+    if "judge_ms" not in cols:
+        add_integer_column("judge_ms")
 
 
 def init_db() -> None:
     SQLModel.metadata.create_all(_engine)
-    _migrate_sqlite_timing_columns()
+    _migrate_run_timing_columns()
 
 
 def get_session() -> Iterator[Session]:
