@@ -3,7 +3,7 @@ from google.genai import types
 
 from ..config import get_settings
 from ..costs import estimate_cost
-from ..schemas import Citation, ProviderResult
+from ..schemas import Citation, ProviderResult, TimingStage
 from .base import stopwatch
 
 MODEL = "gemini-2.5-pro"
@@ -47,4 +47,5 @@ async def call(query: str, grounded: bool) -> ProviderResult:
         output_tokens=out,
         cost_usd=estimate_cost("gemini", "google", MODEL, inp, out, grounded),
         raw={"text": answer},
+        timings=[TimingStage(stage="generate_content", ms=sw["ms"])],
     )

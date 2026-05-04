@@ -2,7 +2,7 @@ import httpx
 
 from ..config import get_settings
 from ..costs import estimate_cost
-from ..schemas import Citation, ProviderResult
+from ..schemas import Citation, ProviderResult, TimingStage
 from .base import stopwatch
 
 ENDPOINT = "https://api.perplexity.ai/chat/completions"
@@ -57,4 +57,5 @@ async def call(query: str, grounded: bool) -> ProviderResult:
         output_tokens=out,
         cost_usd=estimate_cost("perplexity", "perplexity", model, inp, out, grounded),
         raw={"id": data.get("id")},
+        timings=[TimingStage(stage="chat_completions", ms=sw["ms"])],
     )

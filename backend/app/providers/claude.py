@@ -2,7 +2,7 @@ from anthropic import AsyncAnthropic
 
 from ..config import get_settings
 from ..costs import estimate_cost
-from ..schemas import Citation, ProviderResult
+from ..schemas import Citation, ProviderResult, TimingStage
 from .base import stopwatch
 
 MODEL = "claude-sonnet-4-6"
@@ -56,4 +56,5 @@ async def call(query: str, grounded: bool) -> ProviderResult:
         output_tokens=out,
         cost_usd=estimate_cost("claude", "anthropic", MODEL, inp, out, grounded),
         raw={"stop_reason": resp.stop_reason},
+        timings=[TimingStage(stage="messages.create", ms=sw["ms"])],
     )

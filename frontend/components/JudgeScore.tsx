@@ -42,11 +42,25 @@ function Pill({ code, name, tooltip, n }: {
   );
 }
 
+function judgeTimingLine(score: Score): string | null {
+  const parts: string[] = [];
+  if (score.latency_ms != null) {
+    parts.push(`${(score.latency_ms / 1000).toFixed(2)}s judge total`);
+  }
+  if (score.timings?.length) {
+    parts.push(
+      score.timings.map((s) => `${s.stage} ${(s.ms / 1000).toFixed(2)}s`).join(" · ")
+    );
+  }
+  return parts.length ? parts.join(" — ") : null;
+}
+
 export function JudgeScoreBadge({ score }: { score: Score | null }) {
   if (!score) {
     return <span className="text-xs text-[var(--muted)]">Not judged</span>;
   }
   const values = [score.correctness, score.groundedness, score.citation_support];
+  const timing = judgeTimingLine(score);
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2 flex-wrap">
@@ -63,6 +77,11 @@ export function JudgeScoreBadge({ score }: { score: Score | null }) {
           </span>
         )}
       </div>
+      {timing ? (
+        <p className="text-[10px] font-mono text-[var(--muted)]" title="LLM-as-judge latency breakdown">
+          {timing}
+        </p>
+      ) : null}
       <p className="text-xs text-[var(--muted)] italic">{score.rationale}</p>
     </div>
   );

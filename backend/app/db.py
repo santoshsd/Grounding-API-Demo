@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
+from sqlalchemy import inspect, text
 from sqlmodel import Field, Session, SQLModel, create_engine, Relationship
 
 from .config import get_settings
@@ -12,6 +13,8 @@ class Run(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     query: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    fan_out_ms: int | None = None
+    judge_ms: int | None = None
     calls: list["ProviderCall"] = Relationship(back_populates="run")
 
 
@@ -68,8 +71,43 @@ def _make_engine():
 _engine = _make_engine()
 
 
+def _migrate_run_timing_columns() -> None:
+    """Add fan_out_ms / judge_ms on existing DBs (create_all does not ALTER tables).
+
+    Works for SQLite, PostgreSQL, MySQL, and other engines SQLAlchemy inspect supports.
+    """
+    try:
+        insp = inspect(_engine)
+        cols = {c["name"] for c in insp.get_columns(Run.__tablename__)}
+    except Exception:
+        return
+
+    dialect = _engine.dialect.name
+    table = Run.__tablename__
+
+    def add_integer_column(name: str) -> None:
+        if dialect == "postgresql":
+            stmt = text(
+                f'ALTER TABLE "{table}" ADD COLUMN IF NOT EXISTS {name} INTEGER'
+            )
+        elif dialect in ("mysql", "mariadb"):
+            stmt = text(f"ALTER TABLE `{table}` ADD COLUMN {name} INTEGER")
+        else:
+            stmt = text(f"ALTER TABLE {table} ADD COLUMN {name} INTEGER")
+
+        with _engine.begin() as conn:
+            conn.execute(stmt)
+
+    if "fan_out_ms" not in cols:
+        add_integer_column("fan_out_ms")
+        cols.add("fan_out_ms")
+    if "judge_ms" not in cols:
+        add_integer_column("judge_ms")
+
+
 def init_db() -> None:
     SQLModel.metadata.create_all(_engine)
+    _migrate_run_timing_columns()
 
 
 def get_session() -> Iterator[Session]:
