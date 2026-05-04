@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     judge_model_google: str = "gemini-3-pro-preview"
     judge_model_anthropic: str = "claude-sonnet-4-6"
 
+    # If > 0, include a truncated `query_preview` in structured query logs (Railway).
+    # Default 0 omits query text from logs for privacy.
+    log_query_preview_chars: int = 0
+
 
 @lru_cache
 def get_settings() -> Settings:

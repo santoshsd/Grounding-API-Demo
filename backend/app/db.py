@@ -12,6 +12,8 @@ class Run(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     query: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    fan_out_ms: int | None = None
+    judge_ms: int | None = None
     calls: list["ProviderCall"] = Relationship(back_populates="run")
 
 
@@ -68,8 +70,36 @@ def _make_engine():
 _engine = _make_engine()
 
 
+def _sqlite_file_path() -> Path | None:
+    url = get_settings().database_url
+    if not url.startswith("sqlite:///"):
+        return None
+    return Path(url.replace("sqlite:///", "", 1))
+
+
+def _migrate_sqlite_timing_columns() -> None:
+    """Add timing columns on existing SQLite DBs (create_all does not ALTER)."""
+    path = _sqlite_file_path()
+    if path is None:
+        return
+    import sqlite3
+
+    conn = sqlite3.connect(str(path))
+    try:
+        cur = conn.execute("PRAGMA table_info(run)")
+        cols = {row[1] for row in cur.fetchall()}
+        if "fan_out_ms" not in cols:
+            conn.execute("ALTER TABLE run ADD COLUMN fan_out_ms INTEGER")
+        if "judge_ms" not in cols:
+            conn.execute("ALTER TABLE run ADD COLUMN judge_ms INTEGER")
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def init_db() -> None:
     SQLModel.metadata.create_all(_engine)
+    _migrate_sqlite_timing_columns()
 
 
 def get_session() -> Iterator[Session]:

@@ -7,7 +7,7 @@ from google import genai
 
 from ..config import get_settings
 from ..costs import estimate_cost
-from ..schemas import Citation, ProviderResult
+from ..schemas import Citation, ProviderResult, TimingStage
 
 SYSTEM = (
     "You are a careful research assistant. Answer the user's question using ONLY the "
@@ -54,6 +54,7 @@ def result(
     latency_ms: int,
     inp: int | None,
     out: int | None,
+    timings: list[TimingStage] | None = None,
 ) -> ProviderResult:
     return ProviderResult(
         provider=provider,
@@ -66,6 +67,7 @@ def result(
         output_tokens=out,
         cost_usd=estimate_cost(provider, "google", model, inp, out, grounded),
         raw={"hit_count": len(hits)},
+        timings=timings or [],
     )
 
 

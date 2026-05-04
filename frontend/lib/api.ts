@@ -3,6 +3,8 @@ export const API_BASE =
 
 export type Citation = { url: string; title?: string | null; snippet?: string | null };
 
+export type TimingStage = { stage: string; ms: number };
+
 export type JudgeScore = {
   correctness: number;
   groundedness: number;
@@ -10,6 +12,9 @@ export type JudgeScore = {
   rationale: string;
   judge_provider: string | null;
   judge_model: string | null;
+  /** Total wall time for this judge call (ms). */
+  latency_ms?: number | null;
+  timings?: TimingStage[];
 };
 
 export type ProviderCall = {
@@ -20,6 +25,8 @@ export type ProviderCall = {
   answer: string;
   citations: Citation[];
   latency_ms: number;
+  /** Wall time per downstream segment (search vs synthesis, single LLM call, etc.). */
+  timings?: TimingStage[];
   input_tokens: number | null;
   output_tokens: number | null;
   cost_usd: number | null;
@@ -32,6 +39,10 @@ export type Run = {
   query: string;
   created_at: string;
   calls: ProviderCall[];
+  /** Server-side parallel provider fan-out (POST /api/query), ms. */
+  fan_out_ms?: number | null;
+  /** Server-side LLM-as-judge phase (all providers), ms. */
+  judge_ms?: number | null;
 };
 
 export type JudgeOption = {

@@ -2,7 +2,7 @@ from openai import AsyncOpenAI
 
 from ..config import get_settings
 from ..costs import estimate_cost
-from ..schemas import Citation, ProviderResult
+from ..schemas import Citation, ProviderResult, TimingStage
 from .base import stopwatch
 
 MODEL = "gpt-4o"
@@ -49,4 +49,5 @@ async def call(query: str, grounded: bool) -> ProviderResult:
         output_tokens=out,
         cost_usd=estimate_cost("openai_ws", "openai", MODEL, inp, out, grounded),
         raw={"id": getattr(resp, "id", None)},
+        timings=[TimingStage(stage="responses.create", ms=sw["ms"])],
     )
