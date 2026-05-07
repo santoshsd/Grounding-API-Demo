@@ -11,6 +11,7 @@ A side-by-side comparison tool for grounding-capable LLM APIs. Ask one question,
 | OpenAI | `gpt-4o` via Responses API `web_search` tool | same model, no tools | ✓ (checked by default) |
 | Tavily | Tavily Search API → Gemini synthesis | Gemini, no retrieval | ✓ (unchecked by default) |
 | Exa | Exa Search API → Gemini synthesis | Gemini, no retrieval | ✓ (checked by default) |
+| Parallel | Parallel Search API → Gemini synthesis | Gemini, no retrieval | ✓ (unchecked by default) |
 | Perplexity | `sonar-pro` | `sonar` | hidden |
 | Brave | Brave Search API → Gemini synthesis | Gemini, no retrieval | hidden |
 

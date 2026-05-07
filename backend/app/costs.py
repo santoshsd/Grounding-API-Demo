@@ -23,6 +23,7 @@ GROUNDING_SURCHARGE: dict[str, float] = {
     "brave": 0.000,
     "tavily": 0.000,
     "exa": 0.005,
+    "parallel": 0.000,
 }
 
 

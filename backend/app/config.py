@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     brave_api_key: str | None = None
     tavily_api_key: str | None = None
     exa_api_key: str | None = None
+    parallel_api_key: str | None = None
 
     # Model used to synthesize answers for retrieval-only providers (Brave/Tavily/Exa).
     retrieval_synthesis_model: str = "gemini-3-pro-preview"
@@ -43,4 +44,5 @@ PROVIDERS = [
     "brave",
     "tavily",
     "exa",
+    "parallel",
 ]
