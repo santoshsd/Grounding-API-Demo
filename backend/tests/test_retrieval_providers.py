@@ -12,7 +12,7 @@ import httpx
 import pytest
 import respx
 
-from app.providers import _retrieval, brave, exa, tavily
+from app.providers import _retrieval, brave, exa, parallel, tavily
 
 
 @pytest.fixture(autouse=True)
@@ -36,6 +36,7 @@ def _fake_keys(monkeypatch):
     monkeypatch.setenv("BRAVE_API_KEY", "test")
     monkeypatch.setenv("TAVILY_API_KEY", "test")
     monkeypatch.setenv("EXA_API_KEY", "test")
+    monkeypatch.setenv("PARALLEL_API_KEY", "test")
     yield
     config.get_settings.cache_clear()
 
@@ -123,6 +124,44 @@ async def test_exa_grounded_maps_results():
 @pytest.mark.asyncio
 async def test_exa_ungrounded_skips_search():
     r = await exa.call("what is x?", grounded=False)
+    assert r.grounded is False
+    assert r.citations == []
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_parallel_grounded_maps_results():
+    respx.post("https://api.parallel.ai/v1/search").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "search_id": "s1",
+                "results": [
+                    {
+                        "url": "https://a.com",
+                        "title": "T1",
+                        "excerpts": ["excerpt one"],
+                    },
+                    {
+                        "url": "https://b.com",
+                        "title": "T2",
+                        "excerpts": ["excerpt two"],
+                    },
+                ],
+                "session_id": "sess",
+            },
+        )
+    )
+    r = await parallel.call("what is quantum computing?", grounded=True)
+    assert r.provider == "parallel" and r.grounded
+    assert len(r.citations) == 2
+    assert r.citations[0].url == "https://a.com"
+    assert "Synthesized answer" in r.answer
+
+
+@pytest.mark.asyncio
+async def test_parallel_ungrounded_skips_search():
+    r = await parallel.call("what is x?", grounded=False)
     assert r.grounded is False
     assert r.citations == []
 
